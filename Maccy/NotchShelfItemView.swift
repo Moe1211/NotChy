@@ -35,14 +35,7 @@ struct NotchShelfItemView: View {
       .overlay(
         RoundedRectangle(cornerRadius: 16)
           .strokeBorder(
-            LinearGradient(
-              colors: [
-                .white.opacity(isHovered ? 0.2 : 0.08),
-                .white.opacity(0.02),
-              ],
-              startPoint: .topLeading,
-              endPoint: .bottomTrailing
-            ),
+            isHovered ? Color.white.opacity(0.25) : Color.white.opacity(0.06),
             lineWidth: isHovered ? 1.0 : 0.5
           )
       )
@@ -51,14 +44,8 @@ struct NotchShelfItemView: View {
       // ── Metadata overlay ──────────────────────────────────
       metadataOverlay
     }
-    .frame(width: cardWidth, height: cardHeight + 28) // extra space for metadata
-    .scaleEffect(isHovered ? 1.04 : 1.0)
-    .shadow(
-      color: .black.opacity(isHovered ? 0.35 : 0.15),
-      radius: isHovered ? 16 : 6,
-      y: isHovered ? 6 : 3
-    )
-    .animation(.spring(response: 0.25, dampingFraction: 0.72), value: isHovered)
+    .frame(width: cardWidth, height: cardHeight + 28)
+    .contentShape(RoundedRectangle(cornerRadius: 16))
     .onHover { isHovered = $0 }
     .help(item.title)
   }

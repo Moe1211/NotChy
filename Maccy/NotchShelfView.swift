@@ -375,6 +375,7 @@ struct NotchShelfView: View {
       .padding(.horizontal, 16)
       .padding(.vertical, 2)
     }
+    .shadow(color: .black.opacity(0.15), radius: 6, y: 3)
   }
 }
 
