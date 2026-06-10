@@ -59,4 +59,10 @@ extension Defaults.Keys {
   static let windowPosition = Key<NSPoint>("windowPosition", default: NSPoint(x: 0.5, y: 0.8))
   static let showApplicationIcons = Key<Bool>("showApplicationIcons", default: false)
   static let previewWidth = Key<CGFloat>("previewWidth", default: 400)
+
+  // Notch shelf settings
+  static let notchShelfEnabled = Key<Bool>("notchShelfEnabled", default: true)
+  static let notchActivationThreshold = Key<Double>("notchActivationThreshold", default: 6)
+  static let notchDeactivationThreshold = Key<Double>("notchDeactivationThreshold", default: 180)
+  static let notchHorizontalZone = Key<Double>("notchHorizontalZone", default: 0.25)
 }

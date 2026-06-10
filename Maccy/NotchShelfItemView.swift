@@ -1,83 +1,148 @@
 import AppKit
 import SwiftUI
 
-/// A single tile in the notch shelf showing a preview of a clipboard item.
+/// A glass-liquid tile showing a preview of a clipboard item.
 /// Supports drag-and-drop and click-to-paste.
 struct NotchShelfItemView: View {
   let item: HistoryItem
 
   @State private var isHovered = false
 
-  private let tileWidth: CGFloat = 72
-  private let tileHeight: CGFloat = 72
+  private let tileSize: CGFloat = 58
 
   var body: some View {
     ZStack {
-      tileBackground
+      // Glass tile background
+      glassBackground
+
+      // Content
       contentPreview
+        .padding(4)
+
+      // Content-type badge
+      typeBadge
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+        .padding(3)
     }
-    .frame(width: tileWidth, height: tileHeight)
-    .clipShape(RoundedRectangle(cornerRadius: 10))
-    .overlay(
-      RoundedRectangle(cornerRadius: 10)
-        .stroke(isHovered ? Color.accentColor.opacity(0.5) : .white.opacity(0.05),
-                lineWidth: isHovered ? 1.5 : 0.5)
+    .frame(width: tileSize, height: tileSize)
+    .clipShape(RoundedRectangle(cornerRadius: 12))
+    .scaleEffect(isHovered ? 1.08 : 1.0)
+    .shadow(
+      color: .black.opacity(isHovered ? 0.25 : 0.1),
+      radius: isHovered ? 12 : 4,
+      y: isHovered ? 4 : 2
     )
-    .scaleEffect(isHovered ? 1.05 : 1.0)
-    .animation(.easeOut(duration: 0.15), value: isHovered)
+    .animation(.spring(response: 0.25, dampingFraction: 0.7), value: isHovered)
     .onHover { hovering in
       isHovered = hovering
     }
-    .help(item.text ?? item.title)
+    .help(item.title)
   }
+
+  // MARK: - Glass Background
+
+  private var glassBackground: some View {
+    ZStack {
+      // Base material
+      RoundedRectangle(cornerRadius: 12)
+        .fill(.regularMaterial)
+        .opacity(0.7)
+
+      // Hover glow
+      if isHovered {
+        RoundedRectangle(cornerRadius: 12)
+          .fill(Color.accentColor.opacity(0.1))
+      }
+
+      // Shine
+      RoundedRectangle(cornerRadius: 12)
+        .fill(
+          LinearGradient(
+            colors: [.white.opacity(isHovered ? 0.12 : 0.06), .clear],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+          )
+        )
+
+      // Border
+      RoundedRectangle(cornerRadius: 12)
+        .strokeBorder(
+          LinearGradient(
+            colors: [
+              .white.opacity(isHovered ? 0.25 : 0.08),
+              .white.opacity(isHovered ? 0.10 : 0.02)
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+          ),
+          lineWidth: isHovered ? 1.0 : 0.5
+        )
+    }
+  }
+
+  // MARK: - Type Badge
+
+  @ViewBuilder
+  private var typeBadge: some View {
+    if item.image != nil {
+      Image(systemName: "photo.fill")
+        .font(.system(size: 6))
+        .foregroundStyle(.white)
+        .padding(2)
+        .background(Circle().fill(.blue.opacity(0.7)))
+    } else if !item.fileURLs.isEmpty {
+      Image(systemName: "doc.fill")
+        .font(.system(size: 6))
+        .foregroundStyle(.white)
+        .padding(2)
+        .background(Circle().fill(.orange.opacity(0.7)))
+    } else if isHexColor(item.text) {
+      Image(systemName: "paintpalette.fill")
+        .font(.system(size: 6))
+        .foregroundStyle(.white)
+        .padding(2)
+        .background(Circle().fill(.purple.opacity(0.7)))
+    }
+  }
+
+  // MARK: - Content Preview
 
   @ViewBuilder
   private var contentPreview: some View {
     if let image = item.image {
-      // Image thumbnail
       Image(nsImage: image)
         .resizable()
         .aspectRatio(contentMode: .fill)
-        .frame(width: tileWidth - 4, height: tileHeight - 4)
+        .frame(width: tileSize - 8, height: tileSize - 8)
         .clipShape(RoundedRectangle(cornerRadius: 8))
     } else if isHexColor(item.text) {
-      // Color swatch
       colorSwatch
     } else if let text = item.text {
-      // Text or code preview
       textPreview(text)
     } else if !item.fileURLs.isEmpty {
-      // File URL icon
       filePreview
     } else {
-      // Fallback
       fallbackIcon
     }
-  }
-
-  private var tileBackground: some View {
-    RoundedRectangle(cornerRadius: 10)
-      .fill(Color(nsColor: .windowBackgroundColor).opacity(0.4))
   }
 
   @ViewBuilder
   private var colorSwatch: some View {
     if let color = colorFromHex(item.text) {
       ZStack {
-        Rectangle()
+        RoundedRectangle(cornerRadius: 8)
           .fill(Color(nsColor: color))
-        // Checkerboard overlay for transparent-ish colors
         if color.isTranslucent {
           checkerboard
         }
       }
-      .frame(width: tileWidth - 4, height: tileHeight - 4)
+      .frame(width: tileSize - 8, height: tileSize - 8)
       .clipShape(RoundedRectangle(cornerRadius: 8))
       .overlay(
         Text(item.text?.uppercased() ?? "")
-          .font(.system(size: 8, weight: .bold, design: .monospaced))
+          .font(.system(size: 7, weight: .bold, design: .monospaced))
           .foregroundColor(color.isLight ? .black : .white)
-          .padding(4),
+          .padding(3),
         alignment: .bottom
       )
     }
@@ -86,45 +151,49 @@ struct NotchShelfItemView: View {
   @ViewBuilder
   private func textPreview(_ text: String) -> some View {
     let isCode = looksLikeCode(text)
-    VStack(alignment: .leading, spacing: 2) {
-      // Source app badge
+    VStack(alignment: .leading, spacing: 1) {
       if let app = item.application, let appName = appName(from: app) {
         Text(appName)
-          .font(.system(size: 7, weight: .medium))
+          .font(.system(size: 6, weight: .semibold))
           .foregroundStyle(.tertiary)
           .lineLimit(1)
+          .blendMode(.overlay)
       }
 
       Text(text)
-        .font(.system(size: isCode ? 8 : 9, design: isCode ? .monospaced : .default))
+        .font(.system(size: isCode ? 7 : 8, design: isCode ? .monospaced : .default))
         .foregroundStyle(.primary)
         .lineLimit(3, reservesSpace: true)
         .truncationMode(.tail)
+        .opacity(0.85)
     }
-    .padding(6)
+    .padding(5)
     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
   }
 
   private var filePreview: some View {
-    VStack(spacing: 4) {
+    VStack(spacing: 2) {
       Image(systemName: "doc.fill")
-        .font(.title3)
+        .font(.system(size: 14))
         .foregroundStyle(.secondary)
+        .blendMode(.overlay)
 
       if let firstURL = item.fileURLs.first {
         Text(firstURL.lastPathComponent)
-          .font(.system(size: 7))
+          .font(.system(size: 6))
           .foregroundStyle(.tertiary)
           .lineLimit(1)
           .truncationMode(.middle)
+          .blendMode(.overlay)
       }
     }
   }
 
   private var fallbackIcon: some View {
     Image(systemName: "doc.on.clipboard")
-      .font(.title2)
+      .font(.system(size: 16))
       .foregroundStyle(.secondary)
+      .blendMode(.overlay)
   }
 
   private var checkerboard: some View {
@@ -146,18 +215,14 @@ struct NotchShelfItemView: View {
   // MARK: - Helpers
 
   private func isHexColor(_ text: String?) -> Bool {
-    guard let text = text?.trimmingCharacters(in: .whitespacesAndNewlines) else {
-      return false
-    }
+    guard let text = text?.trimmingCharacters(in: .whitespacesAndNewlines) else { return false }
     let hexPattern = "^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$"
     return text.range(of: hexPattern, options: .regularExpression) != nil
   }
 
   private func colorFromHex(_ text: String?) -> NSColor? {
     guard let text = text?.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "#", with: ""),
-          let hex = Int(text, radix: 16) else {
-      return nil
-    }
+          let hex = Int(text, radix: 16) else { return nil }
 
     switch text.count {
     case 3:
@@ -185,7 +250,6 @@ struct NotchShelfItemView: View {
     return codeIndicators.contains { text.contains($0) }
   }
 
-  /// Strip bundle identifier to a short app name
   private func appName(from bundleIdentifier: String) -> String? {
     let known: [String: String] = [
       "com.apple.Safari": "Safari",
@@ -209,9 +273,7 @@ struct NotchShelfItemView: View {
 
 private extension NSColor {
   var isLight: Bool {
-    guard let components = usingColorSpace(.sRGB)?.cgColor.components else {
-      return true
-    }
+    guard let components = usingColorSpace(.sRGB)?.cgColor.components else { return true }
     let brightness = (0.299 * components[0] + 0.587 * components[1] + 0.114 * components[2])
     return brightness > 0.6
   }

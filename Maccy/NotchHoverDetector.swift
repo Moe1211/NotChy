@@ -6,14 +6,14 @@ class NotchHoverDetector {
   static let shared = NotchHoverDetector()
 
   /// Distance from the top of the screen that triggers the shelf to appear
-  private let activationThreshold: CGFloat = 6
+  private var activationThreshold: CGFloat = 6
 
   /// Once visible, the mouse must drop below this Y (relative to screen top)
   /// before the shelf hides. Prevents flicker.
-  private let deactivationThreshold: CGFloat = 180
+  private var deactivationThreshold: CGFloat = 180
 
   /// Horizontal zone: mouse must be within this fraction of screen center
-  private let horizontalActivationFraction: CGFloat = 0.25
+  private var horizontalActivationFraction: CGFloat = 0.25
 
   private var monitor: Any?
   private var isWithinZone = false
@@ -40,6 +40,13 @@ class NotchHoverDetector {
     }
     hideWorkItem?.cancel()
     hideWorkItem = nil
+  }
+
+  /// Update thresholds from settings (called by NotchSettingsPane)
+  func updateThresholds(activation: CGFloat, deactivation: CGFloat, horizontalZone: CGFloat) {
+    activationThreshold = activation
+    deactivationThreshold = deactivation
+    horizontalActivationFraction = horizontalZone
   }
 
   private func handleMouseMove(_ event: NSEvent) {

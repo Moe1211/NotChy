@@ -149,6 +149,8 @@
 		DAFE2DDA268A521B00990986 /* String+Shortened.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAFE2DD9268A521A00990986 /* String+Shortened.swift */; };
 		DAFE2DE9268A9B1B00990986 /* HistoryItemTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAFE2DE8268A9B1B00990986 /* HistoryItemTests.swift */; };
 		DAFEF0B8249D7DEE006029E8 /* KeyboardShortcuts.Name+Shortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAFEF0B7249D7DEE006029E8 /* KeyboardShortcuts.Name+Shortcuts.swift */; };
+		2F578C4E2F0000020088B760 /* NotchSettingsPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F578C4D2F0000020088B760 /* NotchSettingsPane.swift */; };
+		2F578C512F0000020088B760 /* NotchSettings.strings in Resources */ = {isa = PBXBuildFile; fileRef = 2F578C4F2F0000020088B760 /* NotchSettings.strings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -562,6 +564,8 @@
 		DAFE2DD9268A521A00990986 /* String+Shortened.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Shortened.swift"; sourceTree = "<group>"; };
 		DAFE2DE8268A9B1B00990986 /* HistoryItemTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryItemTests.swift; sourceTree = "<group>"; };
 		DAFEF0B7249D7DEE006029E8 /* KeyboardShortcuts.Name+Shortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "KeyboardShortcuts.Name+Shortcuts.swift"; sourceTree = "<group>"; };
+		2F578C4D2F0000020088B760 /* NotchSettingsPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchSettingsPane.swift; sourceTree = "<group>"; };
+		2F578C502F0000020088B760 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/NotchSettings.strings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -669,6 +673,8 @@
 				DA689FAE2C1CD3B00009B887 /* StorageSettings.strings */,
 				DAA365CD2C4BF9DD00A394F8 /* PinsSettingsPane.swift */,
 				DAA365CF2C4C147400A394F8 /* PinsSettings.strings */,
+				2F578C4D2F0000020088B760 /* NotchSettingsPane.swift */,
+				2F578C4F2F0000020088B760 /* NotchSettings.strings */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -1045,6 +1051,7 @@
 				DA20FA742B082E0100056DD5 /* Knock.caf in Resources */,
 				DA009931256411F90030E697 /* appcast.xml in Resources */,
 				DAA5ACB52C1B803000B58513 /* GeneralSettings.strings in Resources */,
+				2F578C512F0000020088B760 /* NotchSettings.strings in Resources */,
 				DA740D7A2C21E6B0007B1A36 /* AdvancedSettings.strings in Resources */,
 				DA689FB02C1CD3B00009B887 /* StorageSettings.strings in Resources */,
 				DA5E62802C39E53F00F4C710 /* PreviewItemView.strings in Resources */,
@@ -1191,6 +1198,7 @@
 				2F578C482F0000010088B760 /* NotchHoverDetector.swift in Sources */,
 				2F578C4A2F0000010088B760 /* NotchShelfView.swift in Sources */,
 				2F578C4C2F0000010088B760 /* NotchShelfItemView.swift in Sources */,
+				2F578C4E2F0000020088B760 /* NotchSettingsPane.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1514,6 +1522,15 @@
 			name = GeneralSettings.strings;
 			sourceTree = "<group>";
 		};
+
+	2F578C4F2F0000020088B760 /* NotchSettings.strings */ = {
+		isa = PBXVariantGroup;
+		children = (
+			2F578C502F0000020088B760 /* en */,
+		);
+		name = NotchSettings.strings;
+		sourceTree = "<group>";
+	};
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
@@ -1765,19 +1782,15 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 2.6.1;
-				PRODUCT_BUNDLE_IDENTIFIER = org.n1nja.Maccy;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.n1nja.NotChy;
+				PRODUCT_NAME = "NotChy";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
-		};
-		DAEE38521E3DBEB100DD2966 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD)";
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Maccy/Maccy.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
@@ -1800,7 +1813,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 2.6.1;
-				PRODUCT_BUNDLE_IDENTIFIER = org.n1nja.Maccy;
+				PRODUCT_BUNDLE_IDENTIFIER = com.n1nja.NotChy;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 5.0;

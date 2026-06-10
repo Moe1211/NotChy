@@ -153,6 +153,13 @@ class AppState: Sendable {
             toolbarIcon: NSImage.gearshape2!
           ) {
             AdvancedSettingsPane()
+          },
+          Settings.Pane(
+            identifier: Settings.PaneIdentifier.notch,
+            title: NSLocalizedString("Title", tableName: "NotchSettings", comment: ""),
+            toolbarIcon: NSImage(systemSymbolName: "livephoto", accessibilityDescription: nil)!
+          ) {
+            NotchSettingsPane()
           }
         ]
       )

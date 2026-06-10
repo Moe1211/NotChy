@@ -2,20 +2,20 @@ import AppKit
 import SwiftUI
 
 /// A floating panel that appears at the top center of the screen below the camera notch.
-/// Shows recent clipboard items as a horizontal shelf.
+/// Shows recent clipboard items as a horizontal shelf with search and filters.
 class NotchShelfPanel: NSPanel {
   static let shared = NotchShelfPanel()
 
   private(set) var isShown: Bool = false
 
-  /// Height of the shelf when expanded
-  static let shelfHeight: CGFloat = 100
+  /// Height of the shelf when expanded (search + filters + items + padding)
+  static let shelfHeight: CGFloat = 148
 
   /// Width of the shelf as a fraction of screen width
-  static let screenWidthFraction: CGFloat = 0.7
+  static let screenWidthFraction: CGFloat = 0.75
 
   /// Maximum absolute width
-  static let maxWidth: CGFloat = 700
+  static let maxWidth: CGFloat = 800
 
   private let viewModel = NotchShelfViewModel()
 
@@ -40,15 +40,16 @@ class NotchShelfPanel: NSPanel {
     titleVisibility = .hidden
     titlebarAppearsTransparent = true
     isMovable = false
-
-    // Don't steal focus from the active app
-    // Nonactivating panel style + these settings handle it
+    acceptsMouseMovedEvents = true
 
     contentView = NSHostingView(
       rootView: NotchShelfView(viewModel: viewModel)
         .ignoresSafeArea()
     )
   }
+
+  /// Allow the panel to become key so text fields (search bar) can accept input
+  override var canBecomeKeyWindow: Bool { true }
 
   /// Show the shelf at the top center of the screen the mouse is on
   func show() {
@@ -58,7 +59,6 @@ class NotchShelfPanel: NSPanel {
     let shelfHeight = Self.shelfHeight
 
     // Position below the notch: screen.frame.maxY is the top edge of the screen
-    // We want the shelf to sit ~4px below the notch area
     let notchAreaHeight: CGFloat = 50  // approx from screen top to bottom of notch
     let topY = screen.frame.maxY - notchAreaHeight - shelfHeight
     let originX = screen.frame.minX + (screen.frame.width - shelfWidth) / 2
