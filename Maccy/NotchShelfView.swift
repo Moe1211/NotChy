@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 // MARK: - Clipboard Filter
 
@@ -174,6 +175,7 @@ struct NotchShelfView: View {
       Self.islandShape
         .fill(Color.black)
         .shadow(color: .black.opacity(0.3), radius: 40, x: 0, y: 12)
+        .drawingGroup()    // GPU-cache only the static background, not the content
 
       // ── 2. Flanking pods (left / right of notch) ──────────────
       flankingBars
@@ -207,8 +209,6 @@ struct NotchShelfView: View {
     }
     .frame(width: panelWidth, height: panelHeight)
     .clipShape(Self.islandShape)
-    .compositingGroup()
-    .drawingGroup()
   }
 
   // MARK: - Dimensions
