@@ -1,4 +1,5 @@
 import AppKit
+import ImageIO
 import SwiftUI
 
 // MARK: - Notch Island Content Card
@@ -12,6 +13,34 @@ struct NotchShelfItemView: View {
 
   private let cardWidth:  CGFloat = 110
   private let cardHeight: CGFloat = 106
+
+  /// Max pixel dimension for downsampled thumbnails (2× retina).
+  private static let thumbnailMaxPixels = 200
+
+  /// Cache keyed by item title + firstCopiedAt to avoid re‑decoding.
+  private static var thumbnailCache: [String: NSImage] = [:]
+
+  /// A downsampled thumbnail suitable for card display.
+  /// Uses `CGImageSourceCreateThumbnailAtIndex` to avoid fully decoding
+  /// large source images (5 MB+ clipboard images).
+  private var thumbnail: NSImage? {
+    guard let data = item.imageData else { return nil }
+    let key = "\(item.title)-\(item.firstCopiedAt)"
+    if let cached = Self.thumbnailCache[key] { return cached }
+
+    guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
+    let options: [CFString: Any] = [
+      kCGImageSourceThumbnailMaxPixelSize: Self.thumbnailMaxPixels,
+      kCGImageSourceCreateThumbnailFromImageAlways: true,
+      kCGImageSourceCreateThumbnailWithTransform: true,
+    ]
+    guard let cgThumb = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary)
+    else { return nil }
+
+    let thumb = NSImage(cgImage: cgThumb, size: NSSize(width: 200, height: 200))
+    Self.thumbnailCache[key] = thumb
+    return thumb
+  }
 
   var body: some View {
     ZStack(alignment: .bottom) {
@@ -53,7 +82,7 @@ struct NotchShelfItemView: View {
 
   @ViewBuilder
   private var typeBadge: some View {
-    if item.image != nil {
+    if item.imageData != nil {
       badgeIcon("photo.fill", color: .blue)
     } else if !item.fileURLs.isEmpty {
       badgeIcon("doc.fill", color: .orange)
@@ -74,7 +103,7 @@ struct NotchShelfItemView: View {
 
   @ViewBuilder
   private var contentPreview: some View {
-    if let image = item.image {
+    if let image = thumbnail {
       Image(nsImage: image)
         .resizable()
         .aspectRatio(contentMode: .fill)
@@ -233,11 +262,9 @@ struct NotchShelfItemView: View {
       let kb = text.utf8.count / 1024
       return kb > 0 ? "\(kb)KB" : "\(text.utf8.count)B"
     }
-    if let image = item.image {
-      if let tiff = image.tiffRepresentation {
-        let kb = tiff.count / 1024
-        return kb > 1024 ? "\(kb / 1024)MB" : "\(kb)KB"
-      }
+    if let data = item.imageData {
+      let kb = data.count / 1024
+      return kb > 1024 ? "\(kb / 1024)MB" : "\(kb)KB"
     }
     return nil
   }
