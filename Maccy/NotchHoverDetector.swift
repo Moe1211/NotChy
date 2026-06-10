@@ -5,8 +5,8 @@ import AppKit
 class NotchHoverDetector {
   static let shared = NotchHoverDetector()
 
-  /// Distance from the top of the screen that triggers the shelf to appear
-  private var activationThreshold: CGFloat = 6
+  /// Distance from the top of the screen that triggers the island to appear
+  private var activationThreshold: CGFloat = 15
 
   /// Once visible, the mouse must drop below this Y (relative to screen top)
   /// before the shelf hides. Prevents flicker.

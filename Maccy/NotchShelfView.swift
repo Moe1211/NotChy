@@ -239,7 +239,7 @@ struct NotchShelfView: View {
         .font(.system(size: 12, weight: .medium))
         .foregroundColor(Color(white: 0.5))
 
-      TextField("Search…", text: $viewModel.searchText)
+      TextField("Search your soul…", text: $viewModel.searchText)
         .textFieldStyle(.plain)
         .font(.system(size: 13, weight: .regular, design: .default))
         .foregroundColor(.white)

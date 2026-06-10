@@ -65,10 +65,13 @@ class NotchShelfPanel: NSPanel {
     guard let screen = mouseScreen() else { return }
 
     let originX = screen.frame.minX + (screen.frame.width - Self.islandWidth) / 2
-    let topY = screen.frame.maxY - Self.notchHeight + 2  // notch aligns with screen notch
+    // setFrameOrigin sets the BOTTOM-LEFT corner.
+    // We want the TOP of the panel (notch cutout) to align with
+    // the top of the screen where the hardware notch sits.
+    let originY = screen.frame.maxY - Self.islandHeight
 
     setContentSize(NSSize(width: Self.islandWidth, height: Self.islandHeight))
-    setFrameOrigin(NSPoint(x: originX, y: topY))
+    setFrameOrigin(NSPoint(x: originX, y: originY))
     orderFrontRegardless()
     makeKey()
     isShown = true
