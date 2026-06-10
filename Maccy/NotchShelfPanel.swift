@@ -1,26 +1,33 @@
 import AppKit
 import SwiftUI
 
-/// A floating panel that appears at the top center of the screen below the camera notch.
-/// Shows recent clipboard items as a horizontal shelf with search and filters.
+/// A floating NSPanel that renders the Notch Island UI — a deep‑black
+/// container with a notch cutout, glass flanking pods, search bar,
+/// segment pills, and a grid of clipboard content cards.
 class NotchShelfPanel: NSPanel {
   static let shared = NotchShelfPanel()
 
   private(set) var isShown: Bool = false
 
-  /// Height of the shelf when expanded (search + filters + items + padding)
-  static let shelfHeight: CGFloat = 148
+  // MARK: - Notch Island Dimensions
 
-  /// Width of the shelf as a fraction of screen width
-  static let screenWidthFraction: CGFloat = 0.75
+  /// Notch cutout dimensions (matches physical MacBook notch)
+  static let notchWidth:  CGFloat = 180
+  static let notchHeight: CGFloat = 36
 
-  /// Maximum absolute width
-  static let maxWidth: CGFloat = 800
+  /// Island container
+  static let islandWidth:  CGFloat = 820
+  static let islandHeight: CGFloat = 300
+
+  /// Corner radius at the bottom of the island
+  static let cornerRadius: CGFloat = 30
 
   private let viewModel = NotchShelfViewModel()
 
   private init() {
-    let contentRect = NSRect(x: 0, y: 0, width: 400, height: Self.shelfHeight)
+    let contentRect = NSRect(x: 0, y: 0,
+                             width: Self.islandWidth,
+                             height: Self.islandHeight)
 
     super.init(
       contentRect: contentRect,
@@ -31,7 +38,7 @@ class NotchShelfPanel: NSPanel {
 
     identifier = NSUserInterfaceItemIdentifier("NotchShelfPanel")
     isFloatingPanel = true
-    level = .floating
+    level = NSWindow.Level(rawValue: NSWindow.Level.floating.rawValue + 2)
     collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
     backgroundColor = .clear
     isOpaque = false
@@ -48,22 +55,19 @@ class NotchShelfPanel: NSPanel {
     )
   }
 
-  /// Allow the panel to become key so text fields (search bar) can accept input
   override var canBecomeKey: Bool { true }
 
-  /// Show the shelf at the top center of the screen the mouse is on
+  // MARK: - Show / Hide
+
+  /// Show the Notch Island positioned so the notch cutout aligns with
+  /// the screen's hardware notch.
   func show() {
     guard let screen = mouseScreen() else { return }
 
-    let shelfWidth = min(screen.visibleFrame.width * Self.screenWidthFraction, Self.maxWidth)
-    let shelfHeight = Self.shelfHeight
+    let originX = screen.frame.minX + (screen.frame.width - Self.islandWidth) / 2
+    let topY = screen.frame.maxY - Self.notchHeight + 2  // notch aligns with screen notch
 
-    // Position below the notch: screen.frame.maxY is the top edge of the screen
-    let notchAreaHeight: CGFloat = 50  // approx from screen top to bottom of notch
-    let topY = screen.frame.maxY - notchAreaHeight - shelfHeight
-    let originX = screen.frame.minX + (screen.frame.width - shelfWidth) / 2
-
-    setContentSize(NSSize(width: shelfWidth, height: shelfHeight))
+    setContentSize(NSSize(width: Self.islandWidth, height: Self.islandHeight))
     setFrameOrigin(NSPoint(x: originX, y: topY))
     orderFrontRegardless()
     makeKey()
@@ -75,9 +79,9 @@ class NotchShelfPanel: NSPanel {
     isShown = false
   }
 
-  /// Returns the screen containing the mouse pointer
+  /// Returns the screen containing the mouse pointer.
   private func mouseScreen() -> NSScreen? {
-    let mouseLocation = NSEvent.mouseLocation
-    return NSScreen.screens.first { $0.frame.contains(mouseLocation) }
+    let loc = NSEvent.mouseLocation
+    return NSScreen.screens.first { $0.frame.contains(loc) }
   }
 }

@@ -151,6 +151,7 @@
 		DAFEF0B8249D7DEE006029E8 /* KeyboardShortcuts.Name+Shortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAFEF0B7249D7DEE006029E8 /* KeyboardShortcuts.Name+Shortcuts.swift */; };
 		DE898F9D2FD95E0500B03BC8 /* NotchSettingsPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE898F9C2FD95E0500B03BC8 /* NotchSettingsPane.swift */; };
 		DE898FA02FD95E2800B03BC8 /* NotchSettings.strings in Resources */ = {isa = PBXBuildFile; fileRef = DE898F9E2FD95E2800B03BC8 /* NotchSettings.strings */; };
+		DE898FA22FD9604A00B03BC8 /* NotchIslandShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE898FA12FD9604A00B03BC8 /* NotchIslandShape.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -566,6 +567,7 @@
 		DAFEF0B7249D7DEE006029E8 /* KeyboardShortcuts.Name+Shortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "KeyboardShortcuts.Name+Shortcuts.swift"; sourceTree = "<group>"; };
 		DE898F9C2FD95E0500B03BC8 /* NotchSettingsPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchSettingsPane.swift; sourceTree = "<group>"; };
 		DE898F9F2FD95E2800B03BC8 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/NotchSettings.strings; sourceTree = "<group>"; };
+		DE898FA12FD9604A00B03BC8 /* NotchIslandShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchIslandShape.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -816,6 +818,7 @@
 		DAEE38451E3DBEB100DD2966 /* Maccy */ = {
 			isa = PBXGroup;
 			children = (
+				DE898FA12FD9604A00B03BC8 /* NotchIslandShape.swift */,
 				2F0EC7802E773F1D003E2EA9 /* PasteStack.swift */,
 				2FBB7A252B5FECBB00C65BBE /* Extensions */,
 				DA68F91F28BD819E007E2F25 /* Intents */,
@@ -1187,6 +1190,7 @@
 				DAEE38471E3DBEB100DD2966 /* AppDelegate.swift in Sources */,
 				DAA072DF2C41C63C006DDFD2 /* ConfirmationView.swift in Sources */,
 				DAA365CE2C4BF9DD00A394F8 /* PinsSettingsPane.swift in Sources */,
+				DE898FA22FD9604A00B03BC8 /* NotchIslandShape.swift in Sources */,
 				DA3BCB8E2C3E015000B01BC1 /* ModifierFlags.swift in Sources */,
 				DA181177247D14DA00066D55 /* Settings.PaneIdentifier+Panes.swift in Sources */,
 				DA3BCB942C3EECBB00B01BC1 /* HistoryItemDecorator.swift in Sources */,

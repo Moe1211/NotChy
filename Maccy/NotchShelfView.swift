@@ -1,9 +1,8 @@
-import AppKit
 import SwiftUI
 
 // MARK: - Clipboard Filter
 
-/// Categories for filtering clipboard items in the shelf.
+/// Categories for filtering clipboard items.
 enum ClipboardFilter: String, CaseIterable, Identifiable {
   case all
   case text
@@ -16,18 +15,18 @@ enum ClipboardFilter: String, CaseIterable, Identifiable {
 
   var label: String {
     switch self {
-    case .all:   return "All"
-    case .text:  return "Text"
-    case .image: return "Image"
-    case .link:  return "Link"
-    case .file:  return "File"
-    case .color: return "Color"
+    case .all:   return "History"
+    case .text:  return "Prompts"
+    case .image: return "Images"
+    case .link:  return "Links"
+    case .file:  return "Files"
+    case .color: return "Colors"
     }
   }
 
   var icon: String {
     switch self {
-    case .all:   return "square.grid.2x2"
+    case .all:   return "clock.arrow.circlepath"
     case .text:  return "text.alignleft"
     case .image: return "photo"
     case .link:  return "link"
@@ -37,49 +36,53 @@ enum ClipboardFilter: String, CaseIterable, Identifiable {
   }
 }
 
+// MARK: - Segment Tab
+
+/// A segment‑tab descriptor matching the Notch Island pill style.
+struct SegmentTab: Identifiable, Equatable {
+  let id: String
+  let label: String
+  let count: Int?
+  let icon: String
+}
+
 // MARK: - View Model
 
-/// View model for the notch shelf.
-/// Hooks into clipboard history and provides search/filter functionality.
 @MainActor
 class NotchShelfViewModel: ObservableObject {
   @Published var recentItems: [HistoryItem] = []
   @Published var searchText: String = ""
   @Published var activeFilter: ClipboardFilter = .all
+  @Published var activeSegment: String = "history"
+  @Published var isExpanded: Bool = false
 
-  /// Maximum items to keep in the shelf
   private let maxItems = 24
+
+  /// Segments that appear as pill tabs below the search bar.
+  let segments: [SegmentTab] = [
+    SegmentTab(id: "history", label: "History", count: 24, icon: "clock.arrow.circlepath"),
+    SegmentTab(id: "prompts", label: "Prompts",  count: nil, icon: "text.alignleft"),
+    SegmentTab(id: "colors",  label: "Colors",   count: nil, icon: "paintpalette"),
+    SegmentTab(id: "favs",    label: "Favorites",count: nil, icon: "star"),
+  ]
 
   var filteredItems: [HistoryItem] {
     let items = recentItems
-
-    // Apply content-type filter
     let filtered: [HistoryItem]
     switch activeFilter {
-    case .all:
-      filtered = items
-    case .text:
-      filtered = items.filter { $0.text != nil && !isHexColor($0.text) && $0.image == nil && $0.fileURLs.isEmpty }
-    case .image:
-      filtered = items.filter { $0.image != nil }
-    case .link:
-      filtered = items.filter { hasLink($0) }
-    case .file:
-      filtered = items.filter { !$0.fileURLs.isEmpty }
-    case .color:
-      filtered = items.filter { isHexColor($0.text) }
+    case .all:   filtered = items
+    case .text:  filtered = items.filter { $0.text != nil && !isHexColor($0.text) && $0.image == nil && $0.fileURLs.isEmpty }
+    case .image: filtered = items.filter { $0.image != nil }
+    case .link:  filtered = items.filter { hasLink($0) }
+    case .file:  filtered = items.filter { !$0.fileURLs.isEmpty }
+    case .color: filtered = items.filter { isHexColor($0.text) }
     }
-
-    // Apply search text
-    guard !searchText.trimmingCharacters(in: .whitespaces).isEmpty else {
-      return filtered
-    }
+    guard !searchText.trimmingCharacters(in: .whitespaces).isEmpty else { return filtered }
     return filtered.filter { itemMatchesSearch($0) }
   }
 
   init() {
     loadExistingHistory()
-
     Clipboard.shared.onNewCopy { [weak self] item in
       DispatchQueue.main.async {
         self?.prependItem(item)
@@ -89,8 +92,7 @@ class NotchShelfViewModel: ObservableObject {
 
   private func loadExistingHistory() {
     let decorated = History.shared.all
-    let items = decorated.prefix(maxItems).map(\.item)
-    recentItems = Array(items)
+    recentItems = Array(decorated.prefix(maxItems).map(\.item))
   }
 
   private func prependItem(_ item: HistoryItem) {
@@ -101,82 +103,132 @@ class NotchShelfViewModel: ObservableObject {
     }
   }
 
-  /// Build an NSItemProvider from a HistoryItem for drag-and-drop
   func dragProvider(for item: HistoryItem) -> NSItemProvider {
     let provider = NSItemProvider()
-
-    if let text = item.text {
-      provider.registerObject(text as NSString, visibility: .all)
-    }
-    if let image = item.image {
-      provider.registerObject(image, visibility: .all)
-    }
-    for url in item.fileURLs {
-      provider.registerObject(url as NSURL, visibility: .all)
-    }
+    if let text = item.text { provider.registerObject(text as NSString, visibility: .all) }
+    if let image = item.image { provider.registerObject(image, visibility: .all) }
+    for url in item.fileURLs { provider.registerObject(url as NSURL, visibility: .all) }
     return provider
   }
 
-  /// Copy and paste the item (click handler)
   func selectItem(_ item: HistoryItem) {
     Clipboard.shared.copy(item)
     Clipboard.shared.paste()
   }
 
-  // MARK: - Filter Helpers
+  // MARK: - Helpers
 
   private func hasLink(_ item: HistoryItem) -> Bool {
     guard let text = item.text else { return false }
-    let linkPattern = try! NSRegularExpression(pattern: #"https?://[^\s]+"#)
-    let range = NSRange(text.startIndex..<text.endIndex, in: text)
-    return linkPattern.firstMatch(in: text, range: range) != nil
+    let pattern = try! NSRegularExpression(pattern: #"https?://[^\s]+"#)
+    return pattern.firstMatch(in: text, range: NSRange(text.startIndex..<text.endIndex, in: text)) != nil
   }
 
   func isHexColor(_ text: String?) -> Bool {
-    guard let text = text?.trimmingCharacters(in: .whitespacesAndNewlines) else { return false }
-    let hexPattern = "^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$"
-    return text.range(of: hexPattern, options: .regularExpression) != nil
+    guard let t = text?.trimmingCharacters(in: .whitespacesAndNewlines) else { return false }
+    return t.range(of: "^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$", options: .regularExpression) != nil
   }
 
   private func itemMatchesSearch(_ item: HistoryItem) -> Bool {
-    let query = searchText.trimmingCharacters(in: .whitespaces).lowercased()
-    if query.isEmpty { return true }
-    if item.title.lowercased().contains(query) { return true }
-    if let text = item.text?.lowercased(), text.contains(query) { return true }
-    if let app = item.application?.lowercased(), app.contains(query) { return true }
+    let q = searchText.trimmingCharacters(in: .whitespaces).lowercased()
+    if q.isEmpty { return true }
+    if item.title.lowercased().contains(q) { return true }
+    if let t = item.text?.lowercased(), t.contains(q) { return true }
+    if let a = item.application?.lowercased(), a.contains(q) { return true }
     return false
   }
 }
 
-// MARK: - Shelf View
+// MARK: - Notch Island View
 
-/// Horizontal shelf view showing search, filters, and recent clipboard items
-/// in an Apple glass-liquid aesthetic.
+/// The full Notch‑Island UI: black notch‑shaped backdrop, glass flanking pods,
+/// search bar, segment pills, and a horizontal grid of content cards.
 struct NotchShelfView: View {
   @ObservedObject var viewModel: NotchShelfViewModel
+  @StateObject private var timeProvider = TimeProvider()
   @State private var searchFocused = false
 
-  var body: some View {
-    VStack(spacing: 0) {
-      // Search bar
-      searchBar
-        .padding(.horizontal, 8)
-        .padding(.top, 6)
+  // Apple‑native spring: mass 1.0, stiffness 120, damping 18
+  private let islandSpring = Animation.spring(response: 0.45, dampingFraction: 0.68, blendDuration: 0.3)
 
-      // Filter chips
-      filterBar
-        .padding(.horizontal, 8)
+  var body: some View {
+    ZStack(alignment: .top) {
+      // ── 1. Notch island backdrop ──────────────────────────────
+      NotchIslandShape()
+        .fill(Color.black)
+        .shadow(color: .black.opacity(0.3), radius: 40, x: 0, y: 12)
+
+      // ── 2. Flanking pods (left / right of notch) ──────────────
+      flankingBars
         .padding(.top, 4)
 
-      // Items
-      if viewModel.filteredItems.isEmpty {
-        emptyState
-      } else {
-        itemsList
+      // ── 3. Main content (below notch level) ──────────────────
+      VStack(spacing: 0) {
+        // spacer pushes content below notch
+        Spacer().frame(height: 44)
+
+        // search + actions
+        HStack(alignment: .center, spacing: 0) {
+          searchBar
+          Spacer(minLength: 16)
+          actionPills
+        }
+        .padding(.horizontal, 16)
+
+        Spacer().frame(height: 10)
+
+        // segment pills
+        segmentPills
+          .padding(.horizontal, 16)
+
+        Spacer().frame(height: 12)
+
+        // content cards
+        if viewModel.filteredItems.isEmpty {
+          emptyState
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+          cardsGrid
+        }
       }
     }
-    .frame(maxWidth: .infinity, maxHeight: .infinity)
-    .background(shelfBackground)
+    .frame(width: panelWidth, height: panelHeight)
+    .clipShape(NotchIslandShape())
+    .animation(islandSpring, value: viewModel.filteredItems.count)
+  }
+
+  // MARK: - Dimensions
+
+  private let panelWidth:   CGFloat = 820
+  private let panelHeight:  CGFloat = 300
+
+  // MARK: - Flanking Bars
+
+  private var flankingBars: some View {
+    HStack(spacing: 0) {
+      // Left pod — app identity
+      FlankingPod(icon: "chevron.left", text: "NotChy", alignment: .leading)
+        .padding(.leading, 12)
+
+      // Notch gap — the physical notch sits here
+      Spacer()
+        .frame(width: 180)
+
+      // Right pod — system metrics
+      FlankingPod(
+        icon: "wifi",
+        text: timeString,
+        alignment: .trailing
+      )
+      .padding(.trailing, 12)
+    }
+    .frame(height: 28)
+  }
+
+  private var timeString: String {
+    let f = DateFormatter()
+    f.dateFormat = "HH:mm"
+    return f.string(from: timeProvider.now)
   }
 
   // MARK: - Search Bar
@@ -184,163 +236,200 @@ struct NotchShelfView: View {
   private var searchBar: some View {
     HStack(spacing: 6) {
       Image(systemName: "magnifyingglass")
-        .font(.system(size: 10, weight: .medium))
-        .foregroundStyle(.tertiary)
+        .font(.system(size: 12, weight: .medium))
+        .foregroundColor(Color(white: 0.5))
 
-      TextField("Search clipboard…", text: $viewModel.searchText)
+      TextField("Search…", text: $viewModel.searchText)
         .textFieldStyle(.plain)
-        .font(.system(size: 11))
+        .font(.system(size: 13, weight: .regular, design: .default))
+        .foregroundColor(.white)
         .focusedValue(\.isSearchFocused, searchFocused)
 
       if !viewModel.searchText.isEmpty {
-        Button(action: { viewModel.searchText = "" }) {
+        Button { viewModel.searchText = "" } label: {
           Image(systemName: "xmark.circle.fill")
-            .font(.system(size: 11))
-            .foregroundStyle(.tertiary)
+            .font(.system(size: 12))
+            .foregroundColor(Color(white: 0.45))
         }
         .buttonStyle(.plain)
       }
     }
-    .padding(.horizontal, 8)
-    .frame(height: 26)
+    .padding(.horizontal, 10)
+    .frame(height: 32)
     .background(
-      RoundedRectangle(cornerRadius: 13)
-        .fill(.regularMaterial)
-        .opacity(0.6)
+      RoundedRectangle(cornerRadius: 16)
+        .fill(Color(white: 0.12))
     )
     .overlay(
-      RoundedRectangle(cornerRadius: 13)
-        .stroke(.white.opacity(0.1), lineWidth: 0.5)
+      RoundedRectangle(cornerRadius: 16)
+        .stroke(Color(white: 0.2), lineWidth: 0.5)
     )
   }
 
-  // MARK: - Filter Bar
+  // MARK: - Action Pills
 
-  private var filterBar: some View {
-    ScrollView(.horizontal, showsIndicators: false) {
-      HStack(spacing: 4) {
-        ForEach(ClipboardFilter.allCases) { filter in
-          filterChip(filter)
-        }
-      }
-      .padding(.horizontal, 1)
+  private var actionPills: some View {
+    HStack(spacing: 6) {
+      actionPill("star")
+      actionPill("square.grid.2x2")
+      actionPill("square.and.arrow.up")
     }
-    .frame(height: 26)
   }
 
-  private func filterChip(_ filter: ClipboardFilter) -> some View {
-    let isActive = viewModel.activeFilter == filter
-
-    return Button(action: {
-      viewModel.activeFilter = filter
-    }) {
-      HStack(spacing: 4) {
-        Image(systemName: filter.icon)
-          .font(.system(size: 9, weight: .semibold))
-        Text(filter.label)
-          .font(.system(size: 10, weight: isActive ? .semibold : .regular))
-      }
-      .foregroundStyle(isActive ? .white : .secondary)
-      .padding(.horizontal, 8)
-      .frame(height: 22)
-      .background(
-        Group {
-          if isActive {
-            RoundedRectangle(cornerRadius: 11)
-              .fill(Color.accentColor)
-          } else {
-            RoundedRectangle(cornerRadius: 11)
-              .fill(.regularMaterial)
-              .opacity(0.5)
-          }
-        }
-      )
-      .overlay(
-        RoundedRectangle(cornerRadius: 11)
-          .stroke(isActive ? .white.opacity(0.15) : .white.opacity(0.05), lineWidth: 0.5)
-      )
+  private func actionPill(_ icon: String) -> some View {
+    Button {} label: {
+      Image(systemName: icon)
+        .font(.system(size: 11, weight: .semibold))
+        .foregroundColor(Color(white: 0.55))
+        .frame(width: 28, height: 28)
+        .background(
+          RoundedRectangle(cornerRadius: 14)
+            .fill(Color(white: 0.12))
+        )
+        .overlay(
+          RoundedRectangle(cornerRadius: 14)
+            .stroke(Color(white: 0.18), lineWidth: 0.5)
+        )
     }
     .buttonStyle(.plain)
   }
 
-  // MARK: - Items
+  // MARK: - Segment Pills
 
-  private var emptyState: some View {
-    VStack(spacing: 4) {
-      Image(systemName: "clipboard")
-        .font(.system(size: 12))
-        .foregroundStyle(.tertiary)
-      Text("Nothing here")
-        .font(.system(size: 10))
-        .foregroundStyle(.tertiary)
+  private var segmentPills: some View {
+    HStack(spacing: 6) {
+      ForEach(viewModel.segments) { seg in
+        let isActive = viewModel.activeSegment == seg.id
+        Button {
+          withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+            viewModel.activeSegment = seg.id
+          }
+        } label: {
+          HStack(spacing: 5) {
+            Image(systemName: seg.icon)
+              .font(.system(size: 10, weight: .semibold))
+            Text(seg.label)
+              .font(.system(size: 11, weight: isActive ? .semibold : .regular))
+            if let c = seg.count {
+              Text("\(c)")
+                .font(.system(size: 10, weight: .medium))
+                .foregroundColor(isActive ? .black.opacity(0.6) : Color(white: 0.5))
+                .padding(.horizontal, 5)
+                .padding(.vertical, 1)
+                .background(
+                  Capsule()
+                    .fill(isActive ? .white.opacity(0.2) : Color(white: 0.1))
+                )
+            }
+          }
+          .foregroundColor(isActive ? .black : Color(white: 0.55))
+          .padding(.horizontal, 10)
+          .frame(height: 28)
+          .background(
+            Group {
+              if isActive {
+                Capsule().fill(Color.white)
+              } else {
+                Capsule().fill(Color(white: 0.12))
+              }
+            }
+          )
+          .overlay(
+            Capsule()
+              .stroke(isActive ? .clear : Color(white: 0.18), lineWidth: 0.5)
+          )
+        }
+        .buttonStyle(.plain)
+      }
     }
-    .frame(maxWidth: .infinity, maxHeight: .infinity)
   }
 
-  private var itemsList: some View {
+  // MARK: - Empty State
+
+  private var emptyState: some View {
+    VStack(spacing: 8) {
+      Image(systemName: "clipboard")
+        .font(.system(size: 20))
+        .foregroundColor(Color(white: 0.3))
+      Text("Nothing here")
+        .font(.system(size: 12))
+        .foregroundColor(Color(white: 0.4))
+    }
+  }
+
+  // MARK: - Cards Grid
+
+  private var cardsGrid: some View {
     ScrollView(.horizontal, showsIndicators: false) {
-      LazyHStack(spacing: 6) {
+      LazyHStack(spacing: 10) {
         ForEach(viewModel.filteredItems, id: \.persistentModelID) { item in
           NotchShelfItemView(item: item)
             .onDrag { viewModel.dragProvider(for: item) }
             .onTapGesture { viewModel.selectItem(item) }
         }
       }
-      .padding(.horizontal, 8)
-      .padding(.vertical, 4)
+      .padding(.horizontal, 16)
+      .padding(.vertical, 2)
     }
   }
+}
 
-  // MARK: - Glass Background
+// MARK: - Flanking Pod
 
-  private var shelfBackground: some View {
-    ZStack {
-      // Base glass layer
-      RoundedRectangle(cornerRadius: 18)
+/// A glass‑morphism pill displayed on the left / right of the notch.
+struct FlankingPod: View {
+  let icon: String
+  let text: String
+  let alignment: Alignment
+
+  var body: some View {
+    HStack(spacing: 5) {
+      if alignment == .trailing { Spacer(minLength: 0) }
+
+      Image(systemName: icon)
+        .font(.system(size: 9, weight: .semibold))
+        .foregroundColor(.white.opacity(0.6))
+
+      Text(text)
+        .font(.system(size: 11, weight: .semibold, design: .default))
+        .foregroundColor(.white)
+        .lineLimit(1)
+
+      if alignment == .leading { Spacer(minLength: 0) }
+    }
+    .padding(.horizontal, 10)
+    .frame(height: 28)
+    .background(
+      Capsule()
         .fill(.ultraThinMaterial)
-
-      // Shine overlay — subtle gradient from top-left
-      RoundedRectangle(cornerRadius: 18)
+    )
+    .background(
+      Capsule()
         .fill(
           LinearGradient(
-            colors: [.white.opacity(0.06), .clear],
+            colors: [.white.opacity(0.12), .white.opacity(0.02)],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
           )
         )
-
-      // Ambient glow at top edge
-      RoundedRectangle(cornerRadius: 18)
-        .fill(
+    )
+    .overlay(
+      Capsule()
+        .stroke(
           LinearGradient(
-            colors: [Color.accentColor.opacity(0.04), .clear],
-            startPoint: .top,
-            endPoint: .bottom
-          )
-        )
-
-      // Subtle border with gradient
-      RoundedRectangle(cornerRadius: 18)
-        .strokeBorder(
-          LinearGradient(
-            colors: [.white.opacity(0.2), .white.opacity(0.05)],
+            colors: [.white.opacity(0.25), .white.opacity(0.06)],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
           ),
           lineWidth: 0.5
         )
-    }
-    .shadow(color: .black.opacity(0.12), radius: 24, x: 0, y: 8)
-    .shadow(color: Color.accentColor.opacity(0.03), radius: 16, x: 0, y: 4)
+    )
   }
 }
 
-// MARK: - Search Focus Environment Key
+// MARK: - Focus Key
 
-struct SearchFocusKey: FocusedValueKey {
-  typealias Value = Bool
-}
-
+struct SearchFocusKey: FocusedValueKey { typealias Value = Bool }
 extension FocusedValues {
   var isSearchFocused: Bool? {
     get { self[SearchFocusKey.self] }
