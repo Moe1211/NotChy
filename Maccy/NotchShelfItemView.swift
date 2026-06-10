@@ -278,8 +278,23 @@ struct NotchShelfItemView: View {
   }
 
   private func appIcon(for bundleId: String) -> NSImage? {
-    NSWorkspace.shared.icon(forFile: NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleId)?.path ?? "")
+    if let cached = Self.iconCache.object(forKey: bundleId as NSString) {
+      return cached
+    }
+    guard let appUrl = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleId),
+          !appUrl.path.isEmpty
+    else { return nil }
+    let icon = NSWorkspace.shared.icon(forFile: appUrl.path)
+    Self.iconCache.setObject(icon, forKey: bundleId as NSString)
+    return icon
   }
+
+  /// Cache app icons so scrolling doesn't hit NSWorkspace for every card.
+  private static let iconCache: NSCache<NSString, NSImage> = {
+    let c = NSCache<NSString, NSImage>()
+    c.countLimit = 50
+    return c
+  }()
 }
 
 // MARK: - Color Brightness Helper

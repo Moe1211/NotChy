@@ -121,13 +121,7 @@ class NotchShelfViewModel: ObservableObject {
     }
   }
 
-  func dragProvider(for item: HistoryItem) -> NSItemProvider {
-    let provider = NSItemProvider()
-    if let text = item.text { provider.registerObject(text as NSString, visibility: .all) }
-    if let image = item.image { provider.registerObject(image, visibility: .all) }
-    for url in item.fileURLs { provider.registerObject(url as NSURL, visibility: .all) }
-    return provider
-  }
+  
 
   func selectItem(_ item: HistoryItem) {
     Clipboard.shared.copy(item)
@@ -365,17 +359,15 @@ struct NotchShelfView: View {
 
   private var cardsGrid: some View {
     ScrollView(.horizontal, showsIndicators: false) {
-      LazyHStack(spacing: 10) {
+      HStack(spacing: 10) {
         ForEach(viewModel.filteredItems, id: \.persistentModelID) { item in
           NotchShelfItemView(item: item)
-            .onDrag { viewModel.dragProvider(for: item) }
             .onTapGesture { viewModel.selectItem(item) }
         }
       }
       .padding(.horizontal, 16)
       .padding(.vertical, 2)
     }
-    .shadow(color: .black.opacity(0.15), radius: 6, y: 3)
   }
 }
 
