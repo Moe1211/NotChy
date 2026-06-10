@@ -52,19 +52,21 @@ struct SegmentTab: Identifiable, Equatable {
 class NotchShelfViewModel: ObservableObject {
   @Published var recentItems: [HistoryItem] = []
   @Published var searchText: String = ""
-  @Published var activeFilter: ClipboardFilter = .all
   @Published var activeSegment: String = "history"
-  @Published var isExpanded: Bool = false
 
   private let maxItems = 24
 
   /// Segments that appear as pill tabs below the search bar.
-  let segments: [SegmentTab] = [
-    SegmentTab(id: "history", label: "History", count: 24, icon: "clock.arrow.circlepath"),
-    SegmentTab(id: "prompts", label: "Prompts",  count: nil, icon: "text.alignleft"),
-    SegmentTab(id: "colors",  label: "Colors",   count: nil, icon: "paintpalette"),
-    SegmentTab(id: "favs",    label: "Favorites",count: nil, icon: "star"),
-  ]
+  var segments: [SegmentTab] {
+    [
+      SegmentTab(id: "history", label: "History", count: recentItems.count, icon: "clock.arrow.circlepath"),
+      SegmentTab(id: "images",  label: "Images",  count: nil, icon: "photo"),
+      SegmentTab(id: "links",   label: "Links",   count: nil, icon: "link"),
+      SegmentTab(id: "files",   label: "Files",   count: nil, icon: "doc"),
+      SegmentTab(id: "colors",  label: "Colors",  count: nil, icon: "paintpalette"),
+      SegmentTab(id: "prompts", label: "Prompts", count: nil, icon: "text.alignleft"),
+    ]
+  }
 
   var filteredItems: [HistoryItem] {
     // Derive filter from active segment
@@ -87,11 +89,11 @@ class NotchShelfViewModel: ObservableObject {
   private func filterForSegment(_ id: String) -> ClipboardFilter {
     switch id {
     case "history": return .all
-    case "prompts": return .text
     case "images":  return .image
     case "links":   return .link
+    case "files":   return .file
     case "colors":  return .color
-    case "favs":    return .all
+    case "prompts": return .text
     default:        return .all
     }
   }
@@ -162,16 +164,16 @@ struct NotchShelfView: View {
   @ObservedObject var viewModel: NotchShelfViewModel
   @State private var searchFocused = false
 
-  // Apple‑native spring: mass 1.0, stiffness 120, damping 18
-  private let islandSpring = Animation.spring(response: 0.45, dampingFraction: 0.68, blendDuration: 0.3)
+  /// Pre‑cached shape — avoids recomputing the notch path on every render pass.
+  private static let islandShape = NotchIslandShape()
 
+  // Apple‑native spring: mass 1.0, stiffness 120, damping 18
   var body: some View {
     ZStack(alignment: .top) {
       // ── 1. Notch island backdrop ──────────────────────────────
-      NotchIslandShape()
+      Self.islandShape
         .fill(Color.black)
         .shadow(color: .black.opacity(0.3), radius: 40, x: 0, y: 12)
-        .drawingGroup()
 
       // ── 2. Flanking pods (left / right of notch) ──────────────
       flankingBars
@@ -179,10 +181,8 @@ struct NotchShelfView: View {
 
       // ── 3. Main content (below notch level) ──────────────────
       VStack(spacing: 0) {
-        // spacer pushes content below notch
         Spacer().frame(height: 44)
 
-        // search + actions
         HStack(alignment: .center, spacing: 0) {
           searchBar
           Spacer(minLength: 16)
@@ -192,13 +192,11 @@ struct NotchShelfView: View {
 
         Spacer().frame(height: 10)
 
-        // segment pills
         segmentPills
           .padding(.horizontal, 16)
 
         Spacer().frame(height: 12)
 
-        // content cards
         if viewModel.filteredItems.isEmpty {
           emptyState
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -208,8 +206,9 @@ struct NotchShelfView: View {
       }
     }
     .frame(width: panelWidth, height: panelHeight)
-    .clipShape(NotchIslandShape())
-    .animation(islandSpring, value: viewModel.filteredItems.count)
+    .clipShape(Self.islandShape)
+    .compositingGroup()
+    .drawingGroup()
   }
 
   // MARK: - Dimensions
@@ -230,47 +229,10 @@ struct NotchShelfView: View {
         .frame(width: 180)
 
       // Right pod — system metrics with live clock
-      rightFlankingPod
+      RightFlankingPod()
         .padding(.trailing, 12)
     }
     .frame(height: 28)
-  }
-
-  private var rightFlankingPod: some View {
-    HStack(spacing: 5) {
-      Spacer(minLength: 0)
-      Image(systemName: "wifi")
-        .font(.system(size: 9, weight: .semibold))
-        .foregroundColor(.white.opacity(0.6))
-      TimeLabelView()
-    }
-    .padding(.horizontal, 10)
-    .frame(height: 28)
-    .background(
-      Capsule()
-        .fill(.ultraThinMaterial)
-    )
-    .background(
-      Capsule()
-        .fill(
-          LinearGradient(
-            colors: [.white.opacity(0.12), .white.opacity(0.02)],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-          )
-        )
-    )
-    .overlay(
-      Capsule()
-        .stroke(
-          LinearGradient(
-            colors: [.white.opacity(0.25), .white.opacity(0.06)],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-          ),
-          lineWidth: 0.5
-        )
-    )
   }
 
   // MARK: - Search Bar
@@ -483,6 +445,36 @@ private struct TimeLabelView: View {
       .foregroundColor(.white)
       .monospacedDigit()
       .onReceive(timer) { now = $0 }
+  }
+}
+
+// MARK: - Right Flanking Pod
+
+/// Self‑contained right‑hand notch pod with Wi‑Fi icon and live clock.
+/// Extracted as a separate struct so its timer doesn't cause the parent view to re‑render.
+private struct RightFlankingPod: View {
+  var body: some View {
+    HStack(spacing: 5) {
+      Spacer(minLength: 0)
+      Image(systemName: "wifi")
+        .font(.system(size: 9, weight: .semibold))
+        .foregroundColor(.white.opacity(0.6))
+      TimeLabelView()
+    }
+    .padding(.horizontal, 10)
+    .frame(height: 28)
+    .background(Capsule().fill(.ultraThinMaterial))
+    .background(
+      Capsule()
+        .fill(LinearGradient(colors: [.white.opacity(0.12), .white.opacity(0.02)],
+                             startPoint: .topLeading, endPoint: .bottomTrailing))
+    )
+    .overlay(
+      Capsule()
+        .stroke(LinearGradient(colors: [.white.opacity(0.25), .white.opacity(0.06)],
+                               startPoint: .topLeading, endPoint: .bottomTrailing),
+                lineWidth: 0.5)
+    )
   }
 }
 
