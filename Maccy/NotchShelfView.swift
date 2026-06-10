@@ -67,9 +67,11 @@ class NotchShelfViewModel: ObservableObject {
   ]
 
   var filteredItems: [HistoryItem] {
+    // Derive filter from active segment
+    let filter = filterForSegment(activeSegment)
     let items = recentItems
     let filtered: [HistoryItem]
-    switch activeFilter {
+    switch filter {
     case .all:   filtered = items
     case .text:  filtered = items.filter { $0.text != nil && !isHexColor($0.text) && $0.image == nil && $0.fileURLs.isEmpty }
     case .image: filtered = items.filter { $0.image != nil }
@@ -79,6 +81,19 @@ class NotchShelfViewModel: ObservableObject {
     }
     guard !searchText.trimmingCharacters(in: .whitespaces).isEmpty else { return filtered }
     return filtered.filter { itemMatchesSearch($0) }
+  }
+
+  /// Map segment tab ID to clipboard filter.
+  private func filterForSegment(_ id: String) -> ClipboardFilter {
+    switch id {
+    case "history": return .all
+    case "prompts": return .text
+    case "images":  return .image
+    case "links":   return .link
+    case "colors":  return .color
+    case "favs":    return .all
+    default:        return .all
+    }
   }
 
   init() {
@@ -145,7 +160,6 @@ class NotchShelfViewModel: ObservableObject {
 /// search bar, segment pills, and a horizontal grid of content cards.
 struct NotchShelfView: View {
   @ObservedObject var viewModel: NotchShelfViewModel
-  @StateObject private var timeProvider = TimeProvider()
   @State private var searchFocused = false
 
   // Apple‑native spring: mass 1.0, stiffness 120, damping 18
@@ -157,6 +171,7 @@ struct NotchShelfView: View {
       NotchIslandShape()
         .fill(Color.black)
         .shadow(color: .black.opacity(0.3), radius: 40, x: 0, y: 12)
+        .drawingGroup()
 
       // ── 2. Flanking pods (left / right of notch) ──────────────
       flankingBars
@@ -214,21 +229,48 @@ struct NotchShelfView: View {
       Spacer()
         .frame(width: 180)
 
-      // Right pod — system metrics
-      FlankingPod(
-        icon: "wifi",
-        text: timeString,
-        alignment: .trailing
-      )
-      .padding(.trailing, 12)
+      // Right pod — system metrics with live clock
+      rightFlankingPod
+        .padding(.trailing, 12)
     }
     .frame(height: 28)
   }
 
-  private var timeString: String {
-    let f = DateFormatter()
-    f.dateFormat = "HH:mm"
-    return f.string(from: timeProvider.now)
+  private var rightFlankingPod: some View {
+    HStack(spacing: 5) {
+      Spacer(minLength: 0)
+      Image(systemName: "wifi")
+        .font(.system(size: 9, weight: .semibold))
+        .foregroundColor(.white.opacity(0.6))
+      TimeLabelView()
+    }
+    .padding(.horizontal, 10)
+    .frame(height: 28)
+    .background(
+      Capsule()
+        .fill(.ultraThinMaterial)
+    )
+    .background(
+      Capsule()
+        .fill(
+          LinearGradient(
+            colors: [.white.opacity(0.12), .white.opacity(0.02)],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+          )
+        )
+    )
+    .overlay(
+      Capsule()
+        .stroke(
+          LinearGradient(
+            colors: [.white.opacity(0.25), .white.opacity(0.06)],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+          ),
+          lineWidth: 0.5
+        )
+    )
   }
 
   // MARK: - Search Bar
@@ -424,6 +466,23 @@ struct FlankingPod: View {
           lineWidth: 0.5
         )
     )
+  }
+}
+
+// MARK: - Time Label View
+
+/// A lightweight self‑updating clock label that redraws once per second
+/// without causing its parent view to re‑render.
+private struct TimeLabelView: View {
+  @State private var now = Date()
+  private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+
+  var body: some View {
+    Text(now, style: .time)
+      .font(.system(size: 11, weight: .semibold, design: .default))
+      .foregroundColor(.white)
+      .monospacedDigit()
+      .onReceive(timer) { now = $0 }
   }
 }
 

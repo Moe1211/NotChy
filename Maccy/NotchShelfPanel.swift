@@ -38,7 +38,9 @@ class NotchShelfPanel: NSPanel {
 
     identifier = NSUserInterfaceItemIdentifier("NotchShelfPanel")
     isFloatingPanel = true
-    level = NSWindow.Level(rawValue: NSWindow.Level.floating.rawValue + 2)
+    // Must sit above the menu bar so the notch cutout aligns with
+    // the physical hardware notch at the very top of the screen.
+    level = NSWindow.Level(rawValue: 1000)
     collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
     backgroundColor = .clear
     isOpaque = false
