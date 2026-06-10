@@ -59,7 +59,13 @@ class History: ItemsContainer { // swiftlint:disable:this type_body_length
   @ObservationIgnored
   private var sessionLog: [Int: HistoryItem] = [:]
 
-  // The distinction between `all` and `items` is the following:
+  typealias OnClearHook = () -> Void
+
+  private var onClearHooks: [OnClearHook] = []
+
+  func onClear(_ hook: @escaping OnClearHook) {
+    onClearHooks.append(hook)
+  }
   // - `all` stores all history items, even the ones that are currently hidden by a search
   // - `items` stores only visible history items, updated during a search
   @ObservationIgnored
@@ -236,6 +242,7 @@ class History: ItemsContainer { // swiftlint:disable:this type_body_length
     }
 
     Clipboard.shared.clear()
+    onClearHooks.forEach { $0() }
     AppState.shared.popup.close()
     Task {
       AppState.shared.popup.needsResize = true
@@ -258,6 +265,7 @@ class History: ItemsContainer { // swiftlint:disable:this type_body_length
     }
 
     Clipboard.shared.clear()
+    onClearHooks.forEach { $0() }
     AppState.shared.popup.close()
     Task {
       AppState.shared.popup.needsResize = true

@@ -106,6 +106,11 @@ class NotchShelfViewModel: ObservableObject {
         self?.prependItem(item)
       }
     }
+    History.shared.onClear { [weak self] in
+      DispatchQueue.main.async {
+        self?.recentItems.removeAll()
+      }
+    }
   }
 
   private func loadExistingHistory() {
@@ -125,7 +130,6 @@ class NotchShelfViewModel: ObservableObject {
 
   func selectItem(_ item: HistoryItem) {
     Clipboard.shared.copy(item)
-    Clipboard.shared.paste()
   }
 
   // MARK: - Helpers
