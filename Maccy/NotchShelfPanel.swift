@@ -49,7 +49,7 @@ class NotchShelfPanel: NSPanel {
   }
 
   /// Allow the panel to become key so text fields (search bar) can accept input
-  override var canBecomeKeyWindow: Bool { true }
+  override var canBecomeKey: Bool { true }
 
   /// Show the shelf at the top center of the screen the mouse is on
   func show() {
@@ -66,6 +66,7 @@ class NotchShelfPanel: NSPanel {
     setContentSize(NSSize(width: shelfWidth, height: shelfHeight))
     setFrameOrigin(NSPoint(x: originX, y: topY))
     orderFrontRegardless()
+    makeKey()
     isShown = true
   }
 
