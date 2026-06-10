@@ -47,7 +47,6 @@ struct NotchShelfItemView: View {
     .frame(width: cardWidth, height: cardHeight + 28)
     .contentShape(RoundedRectangle(cornerRadius: 16))
     .onHover { isHovered = $0 }
-    .help(item.title)
   }
 
   // MARK: - Type Badge
