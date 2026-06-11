@@ -16,8 +16,8 @@ class NotchShelfPanel: NSPanel {
   static let notchHeight: CGFloat = 36
 
   /// Island container
-  static let islandWidth:  CGFloat = 820
-  static let islandHeight: CGFloat = 300
+  static let islandWidth:  CGFloat = 840
+  static let islandHeight: CGFloat = 400
 
   /// Corner radius at the bottom of the island
   static let cornerRadius: CGFloat = 30

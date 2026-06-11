@@ -11,8 +11,8 @@ struct NotchShelfItemView: View {
 
   @State private var isHovered = false
 
-  private let cardWidth:  CGFloat = 110
-  private let cardHeight: CGFloat = 106
+  private let cardWidth:  CGFloat = 128
+  private let cardHeight: CGFloat = 90
 
   /// Max pixel dimension for downsampled thumbnails (2× retina).
   private static let thumbnailMaxPixels = 200

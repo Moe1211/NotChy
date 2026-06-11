@@ -86,6 +86,13 @@ class NotchShelfViewModel: ObservableObject {
     return filtered.filter { itemMatchesSearch($0) }
   }
 
+  /// Items chunked into vertical pairs for the bento 2‑row grid.
+  var chunkedItems: [[HistoryItem]] {
+    stride(from: 0, to: filteredItems.count, by: 2).map {
+      Array(filteredItems[$0..<min($0 + 2, filteredItems.count)])
+    }
+  }
+
   /// Map segment tab ID to clipboard filter.
   private func filterForSegment(_ id: String) -> ClipboardFilter {
     switch id {
@@ -211,8 +218,8 @@ struct NotchShelfView: View {
 
   // MARK: - Dimensions
 
-  private let panelWidth:   CGFloat = 820
-  private let panelHeight:  CGFloat = 300
+  private let panelWidth:   CGFloat = 840
+  private let panelHeight:  CGFloat = 400
 
   // MARK: - Flanking Bars
 
@@ -364,13 +371,21 @@ struct NotchShelfView: View {
   private var cardsGrid: some View {
     ScrollView(.horizontal, showsIndicators: false) {
       HStack(spacing: 10) {
-        ForEach(viewModel.filteredItems, id: \.persistentModelID) { item in
-          NotchShelfItemView(item: item)
-            .onTapGesture { viewModel.selectItem(item) }
+        ForEach(viewModel.chunkedItems, id: \.first?.persistentModelID) { chunk in
+          VStack(spacing: 8) {
+            if chunk.indices.contains(0) {
+              NotchShelfItemView(item: chunk[0])
+                .onTapGesture { viewModel.selectItem(chunk[0]) }
+            }
+            if chunk.indices.contains(1) {
+              NotchShelfItemView(item: chunk[1])
+                .onTapGesture { viewModel.selectItem(chunk[1]) }
+            }
+          }
         }
       }
       .padding(.horizontal, 16)
-      .padding(.vertical, 2)
+      .padding(.vertical, 8)
     }
   }
 }
