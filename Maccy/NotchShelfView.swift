@@ -331,7 +331,7 @@ struct NotchShelfView: View {
                 )
             }
           }
-          .foregroundColor(isActive ? .black : Color(white: 0.55))
+          .foregroundColor(isActive ? .black : Color(white: 0.5))
           .padding(.horizontal, 10)
           .frame(height: 28)
           .background(
@@ -417,9 +417,9 @@ struct FlankingPod: View {
     .frame(height: 28)
     .background(
       Capsule()
-        .fill(.ultraThinMaterial)
+        .fill(.regularMaterial)
     )
-    .background(
+    .overlay(
       Capsule()
         .fill(
           LinearGradient(
@@ -433,7 +433,7 @@ struct FlankingPod: View {
       Capsule()
         .stroke(
           LinearGradient(
-            colors: [.white.opacity(0.25), .white.opacity(0.06)],
+            colors: [.white.opacity(0.30), .white.opacity(0.08)],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
           ),
@@ -475,15 +475,15 @@ private struct RightFlankingPod: View {
     }
     .padding(.horizontal, 10)
     .frame(height: 28)
-    .background(Capsule().fill(.ultraThinMaterial))
-    .background(
+    .background(Capsule().fill(.regularMaterial))
+    .overlay(
       Capsule()
         .fill(LinearGradient(colors: [.white.opacity(0.12), .white.opacity(0.02)],
                              startPoint: .topLeading, endPoint: .bottomTrailing))
     )
     .overlay(
       Capsule()
-        .stroke(LinearGradient(colors: [.white.opacity(0.25), .white.opacity(0.06)],
+        .stroke(LinearGradient(colors: [.white.opacity(0.30), .white.opacity(0.08)],
                                startPoint: .topLeading, endPoint: .bottomTrailing),
                 lineWidth: 0.5)
     )

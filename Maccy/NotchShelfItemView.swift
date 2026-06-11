@@ -59,12 +59,12 @@ struct NotchShelfItemView: View {
       .frame(width: cardWidth, height: cardHeight)
       .background(
         RoundedRectangle(cornerRadius: 16)
-          .fill(Color(white: 0.09))
+          .fill(Color(white: 0.12))
       )
       .overlay(
         RoundedRectangle(cornerRadius: 16)
           .strokeBorder(
-            isHovered ? Color.white.opacity(0.25) : Color.white.opacity(0.06),
+            isHovered ? Color.white.opacity(0.30) : Color.white.opacity(0.10),
             lineWidth: isHovered ? 1.0 : 0.5
           )
       )
@@ -221,8 +221,8 @@ struct NotchShelfItemView: View {
       LinearGradient(
         colors: [
           Color.black.opacity(0.0),
-          Color.black.opacity(0.55),
-          Color.black.opacity(0.75),
+          Color.black.opacity(0.60),
+          Color.black.opacity(0.85),
         ],
         startPoint: .top,
         endPoint: .bottom

@@ -11,6 +11,10 @@ struct NotchIslandShape: Shape {
   var cornerRadius: CGFloat = 30
   var bridgeRadius: CGFloat = 14
 
+  /// Top‑corner radius — larger values create a more pronounced outward
+  /// curve so the black container smoothly "bleeds" into the screen edge.
+  private let topCornerRadius: CGFloat = 8
+
   func path(in rect: CGRect) -> Path {
     let w = rect.width
     let h = rect.height
@@ -18,15 +22,14 @@ struct NotchIslandShape: Shape {
     let nr = notchWidth                 // notch right edge = nx + nr
     let br = bridgeRadius
     let cr = cornerRadius
+    let tr = topCornerRadius
 
     return Path { path in
-      // ── start top‑left (slightly inset for top‑corner polish) ──
-      path.move(to: CGPoint(x: 0, y: br + 1))
-
-      // left flank top edge
+      // ── left flank top edge ─────────────────────────────────
+      path.move(to: CGPoint(x: 0, y: tr))
       path.addArc(tangent1End: CGPoint(x: 0, y: 0),
                   tangent2End: CGPoint(x: nx, y: 0),
-                  radius: 4)
+                  radius: tr)
       path.addLine(to: CGPoint(x: nx - br, y: 0))
 
       // ▼ S‑curve bridge: left notch corner ──────────────────────
@@ -59,10 +62,10 @@ struct NotchIslandShape: Shape {
                   radius: br)
 
       // right flank top edge
-      path.addLine(to: CGPoint(x: w - 4, y: 0))
+      path.addLine(to: CGPoint(x: w - tr, y: 0))
       path.addArc(tangent1End: CGPoint(x: w, y: 0),
                   tangent2End: CGPoint(x: w, y: cr),
-                  radius: 4)
+                  radius: tr)
 
       // right side
       path.addLine(to: CGPoint(x: w, y: h - cr))
@@ -81,7 +84,7 @@ struct NotchIslandShape: Shape {
                   radius: cr)
 
       // left side → close
-      path.addLine(to: CGPoint(x: 0, y: br + 1))
+      path.addLine(to: CGPoint(x: 0, y: tr))
       path.closeSubpath()
     }
   }
